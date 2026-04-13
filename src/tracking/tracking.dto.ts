@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
   IsIn,
@@ -9,23 +9,27 @@ import {
 import { Type } from 'class-transformer';
 
 export class TrackingDto {
-  @ApiProperty({
+  // 1. Ubah ke ApiPropertyOptional, tambahkan @IsOptional(), dan ganti ! menjadi ?
+  @ApiPropertyOptional({
     description: 'Bagian/plant',
     example: 'Semarang',
     enum: ['Semarang', 'Surabaya', 'Semarang & Surabaya'],
   })
+  @IsOptional()
   @IsString()
   @IsIn(['Semarang', 'Surabaya', 'Semarang & Surabaya'])
-  tipe!: string;
+  tipe?: string;
 
-  @ApiProperty({
+  // 2. Ubah ke ApiPropertyOptional, tambahkan @IsOptional(), dan ganti ! menjadi ?
+  @ApiPropertyOptional({
     description: 'Tahapan proses',
     example: 'PACKING',
     enum: ['ASSY', 'PAINTING', 'PACKING', 'BLEACHING', 'ALL'],
   })
+  @IsOptional()
   @IsString()
   @IsIn(['ASSY', 'PAINTING', 'PACKING', 'BLEACHING', 'ALL'])
-  process!: string;
+  process?: string;
 
   @ApiPropertyOptional({
     description: 'Tanggal transaksi (YYYY-MM-DD)',

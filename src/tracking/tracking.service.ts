@@ -15,19 +15,27 @@ export class TrackingService {
       whereClauses.push(sql.replace('?', `$${values.length}`));
     };
 
-    const tipeList =
-      dto.tipe === 'Semarang & Surabaya'
-        ? ['Semarang', 'Surabaya']
-        : [dto.tipe];
+    // 1. Handle tipe secara dinamis jika ada
+    let tipeResolved = null;
+    if (dto.tipe) {
+      tipeResolved =
+        dto.tipe === 'Semarang & Surabaya'
+          ? ['Semarang', 'Surabaya']
+          : [dto.tipe];
+      addCondition('tipe = ANY(?)', tipeResolved);
+    }
 
-    const processList =
-      dto.process === 'ALL'
-        ? ['ASSY', 'PAINTING', 'PACKING', 'BLEACHING']
-        : [dto.process];
+    // 2. Handle process secara dinamis jika ada
+    let processResolved = null;
+    if (dto.process) {
+      processResolved =
+        dto.process === 'ALL'
+          ? ['ASSY', 'PAINTING', 'PACKING', 'BLEACHING']
+          : [dto.process];
+      addCondition('process = ANY(?)', processResolved);
+    }
 
-    addCondition('tipe = ANY(?)', tipeList);
-    addCondition('process = ANY(?)', processList);
-
+    // Mapping parameter opsional lainnya
     if (dto.posting_date) addCondition('posting_date = ?', dto.posting_date);
     if (dto.serialno) addCondition('serialno = ?', dto.serialno);
     if (dto.so_item) addCondition('so_item = ?', dto.so_item);
@@ -61,6 +69,10 @@ export class TrackingService {
     if (dto.inspect) addCondition('inspect = ?', dto.inspect);
     if (dto.bagian_file) addCondition('bagian_file = ?', dto.bagian_file);
 
+    // 3. Amankan sintaks SQL (Jika tidak ada filter, hilangkan klausa WHERE)
+    const whereSQL =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
     const sql = `
       SELECT
         serialno,
@@ -93,8 +105,9 @@ export class TrackingService {
         bagian_file,
         extracted_at
       FROM z_rfc_trck_sernum_postgree
-      WHERE ${whereClauses.join(' AND ')}
+      ${whereSQL}
       ORDER BY tipe ASC, process ASC, serialno ASC
+      LIMIT 100 -- Sangat disarankan menambahkan limit default agar database tidak ddos jika query kosong
     `;
 
     const result = await this.postgresService.query(sql, values);
@@ -104,8 +117,8 @@ export class TrackingService {
       total: result.rows.length,
       filters: {
         ...dto,
-        tipe_resolved: tipeList,
-        process_resolved: processList,
+        tipe_resolved: tipeResolved,
+        process_resolved: processResolved,
       },
       data: result.rows,
     };
