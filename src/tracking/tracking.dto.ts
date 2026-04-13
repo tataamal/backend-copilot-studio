@@ -9,19 +9,27 @@ import {
 import { Type } from 'class-transformer';
 
 export class TrackingDto {
-  @ApiProperty({ description: 'Plant produksi', example: 'Semarang' })
+  @ApiProperty({
+    description: 'Bagian/plant',
+    example: 'Semarang',
+    enum: ['Semarang', 'Surabaya', 'Semarang & Surabaya'],
+  })
   @IsString()
-  @IsIn(['Semarang', 'Surabaya'])
+  @IsIn(['Semarang', 'Surabaya', 'Semarang & Surabaya'])
   tipe!: string;
 
-  @ApiProperty({ description: 'Tahapan proses', example: 'PACKING' })
+  @ApiProperty({
+    description: 'Tahapan proses',
+    example: 'PACKING',
+    enum: ['ASSY', 'PAINTING', 'PACKING', 'BLEACHING', 'ALL'],
+  })
   @IsString()
-  @IsIn(['ASSY', 'PAINTING', 'PACKING', 'BLEACHING'])
+  @IsIn(['ASSY', 'PAINTING', 'PACKING', 'BLEACHING', 'ALL'])
   process!: string;
 
   @ApiPropertyOptional({
     description: 'Tanggal transaksi (YYYY-MM-DD)',
-    example: '2026-04-11',
+    example: '2026-04-10',
   })
   @IsOptional()
   @IsDateString()
@@ -48,7 +56,7 @@ export class TrackingDto {
   @IsNumber()
   net_price?: number;
 
-  @ApiPropertyOptional({ example: 14000.0 })
+  @ApiPropertyOptional({ example: 14000 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

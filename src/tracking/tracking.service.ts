@@ -15,11 +15,19 @@ export class TrackingService {
       whereClauses.push(sql.replace('?', `$${values.length}`));
     };
 
-    // required
-    addCondition('tipe = ?', dto.tipe);
-    addCondition('process = ?', dto.process);
+    const tipeList =
+      dto.tipe === 'Semarang & Surabaya'
+        ? ['Semarang', 'Surabaya']
+        : [dto.tipe];
 
-    // optional
+    const processList =
+      dto.process === 'ALL'
+        ? ['ASSY', 'PAINTING', 'PACKING', 'BLEACHING']
+        : [dto.process];
+
+    addCondition('tipe = ANY(?)', tipeList);
+    addCondition('process = ANY(?)', processList);
+
     if (dto.posting_date) addCondition('posting_date = ?', dto.posting_date);
     if (dto.serialno) addCondition('serialno = ?', dto.serialno);
     if (dto.so_item) addCondition('so_item = ?', dto.so_item);
@@ -86,7 +94,7 @@ export class TrackingService {
         extracted_at
       FROM z_rfc_trck_sernum_postgree
       WHERE ${whereClauses.join(' AND ')}
-      ORDER BY serialno ASC, extracted_at DESC
+      ORDER BY tipe ASC, process ASC, serialno ASC
     `;
 
     const result = await this.postgresService.query(sql, values);
@@ -94,7 +102,11 @@ export class TrackingService {
     return {
       status: 'success',
       total: result.rows.length,
-      filters: dto,
+      filters: {
+        ...dto,
+        tipe_resolved: tipeList,
+        process_resolved: processList,
+      },
       data: result.rows,
     };
   }
