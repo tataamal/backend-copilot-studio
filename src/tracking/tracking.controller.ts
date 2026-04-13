@@ -5,7 +5,6 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Tracking')
 @Controller('tracking')
-// PERHATIKAN BARIS INI: Pastikan namanya persis "TrackingController" dengan awalan export
 export class TrackingController {
   constructor(private readonly trackingService: TrackingService) {}
 
