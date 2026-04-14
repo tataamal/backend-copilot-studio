@@ -146,7 +146,6 @@ export class TrackingService {
     }
   }
 
-  // --- HELPER FUNCTION UNTUK MEMBENTUK QUERY WHERE SECARA DINAMIS ---
   private buildWhereClause(dto: any) {
     const whereClauses: string[] = [];
     const values: any[] = [];
@@ -154,6 +153,17 @@ export class TrackingService {
     const addCondition = (sql: string, value: any) => {
       values.push(value);
       whereClauses.push(sql.replace('?', `$${values.length}`));
+    };
+
+    // 1. Fungsi kecil pembantu untuk membalik tanggal DD-MM-YYYY menjadi YYYY-MM-DD
+    const normalizeDate = (dateStr: string) => {
+      if (!dateStr) return null;
+      const parts = dateStr.split('-');
+      // Jika formatnya DD-MM-YYYY (bagian terakhir adalah tahun/4 digit)
+      if (parts.length === 3 && parts[2].length === 4) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      return dateStr; // Kembalikan apa adanya jika formatnya sudah benar
     };
 
     let tipeResolved = null;
@@ -167,14 +177,27 @@ export class TrackingService {
 
     let processResolved = null;
     if (dto.process) {
+      // Pastikan process diubah ke Uppercase agar selalu cocok dengan database
+      const upperProcess = dto.process.toUpperCase();
       processResolved =
-        dto.process === 'ALL'
+        upperProcess === 'ALL'
           ? ['ASSY', 'PAINTING', 'PACKING', 'BLEACHING']
-          : [dto.process];
+          : [upperProcess];
       addCondition('process = ANY(?)', processResolved);
     }
 
-    if (dto.posting_date) addCondition('posting_date = ?', dto.posting_date);
+    // 2. Terapkan normalizeDate pada semua parameter yang berhubungan dengan tanggal
+    if (dto.posting_date)
+      addCondition('posting_date = ?', normalizeDate(dto.posting_date));
+    if (dto.release_date)
+      addCondition('release_date = ?', normalizeDate(dto.release_date));
+    if (dto.posting_date_inspection)
+      addCondition(
+        'posting_date_inspection = ?',
+        normalizeDate(dto.posting_date_inspection),
+      );
+
+    // Parameter lainnya tetap sama seperti sebelumnya...
     if (dto.serialno) addCondition('serialno = ?', dto.serialno);
     if (dto.so_item) addCondition('so_item = ?', dto.so_item);
     if (dto.process_status)
@@ -190,7 +213,6 @@ export class TrackingService {
     if (dto.pro) addCondition('pro = ?', dto.pro);
     if (dto.mrp) addCondition('mrp = ?', dto.mrp);
     if (dto.material_doc) addCondition('material_doc = ?', dto.material_doc);
-    if (dto.release_date) addCondition('release_date = ?', dto.release_date);
     if (dto.person) addCondition('person = ?', dto.person);
     if (dto.material_inspection)
       addCondition('material_inspection = ?', dto.material_inspection);
