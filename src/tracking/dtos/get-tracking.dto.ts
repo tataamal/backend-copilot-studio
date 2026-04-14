@@ -25,6 +25,12 @@ export class GetTrackingDto {
     enum: ['ASSY', 'PAINTING', 'PACKING', 'BLEACHING', 'ALL'],
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.toUpperCase();
+    }
+    return value;
+  })
   @IsString()
   @IsIn(['ASSY', 'PAINTING', 'PACKING', 'BLEACHING', 'ALL'])
   process?: string;
