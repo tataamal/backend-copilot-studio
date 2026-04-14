@@ -6,10 +6,9 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
-export class TrackingDto {
-  // 1. Ubah ke ApiPropertyOptional, tambahkan @IsOptional(), dan ganti ! menjadi ?
+export class GetTrackingDto {
   @ApiPropertyOptional({
     description: 'Bagian/plant',
     example: 'Semarang',
@@ -20,7 +19,6 @@ export class TrackingDto {
   @IsIn(['Semarang', 'Surabaya', 'Semarang & Surabaya'])
   tipe?: string;
 
-  // 2. Ubah ke ApiPropertyOptional, tambahkan @IsOptional(), dan ganti ! menjadi ?
   @ApiPropertyOptional({
     description: 'Tahapan proses',
     example: 'PACKING',
@@ -31,11 +29,21 @@ export class TrackingDto {
   @IsIn(['ASSY', 'PAINTING', 'PACKING', 'BLEACHING', 'ALL'])
   process?: string;
 
+  // --- NORMALISASI TANGGAL TRANSAKSI ---
   @ApiPropertyOptional({
-    description: 'Tanggal transaksi (YYYY-MM-DD)',
-    example: '2026-04-10',
+    description: 'Tanggal transaksi (DD-MM-YYYY)',
+    example: '10-04-2026',
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (!value) return value;
+    // Ubah DD-MM-YYYY menjadi YYYY-MM-DD agar validasi IsDateString dan Postgres tidak error
+    const parts = value.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return value;
+  })
   @IsDateString()
   posting_date?: string;
 
@@ -101,8 +109,20 @@ export class TrackingDto {
   @IsString()
   material_doc?: string;
 
-  @ApiPropertyOptional({ example: '2026-04-10' })
+  // --- NORMALISASI TANGGAL RELEASE ---
+  @ApiPropertyOptional({
+    description: 'Tanggal rilis (DD-MM-YYYY)',
+    example: '10-04-2026',
+  })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (!value) return value;
+    const parts = value.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return value;
+  })
   @IsDateString()
   release_date?: string;
 
@@ -145,9 +165,4 @@ export class TrackingDto {
   @IsOptional()
   @IsString()
   inspect?: string;
-
-  @ApiPropertyOptional({ example: 'SMG' })
-  @IsOptional()
-  @IsIn(['SMG', 'SBY'])
-  bagian_file?: 'SMG' | 'SBY';
 }
